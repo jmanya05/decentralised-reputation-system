@@ -2,7 +2,6 @@
 	Smart Contract for a Reputation System which runs in Chainspace.
 """
 
-
 ####################################################################
 # imports
 ####################################################################
@@ -13,7 +12,7 @@ from json    import dumps, loads
 from petlib.ecdsa import do_ecdsa_sign, do_ecdsa_verify
 # coconut
 from chainspacecontract.examples.utils import *
-from chainspacecontract.examples.petition_proofs import *
+from chainspacecontract.examples.repsys_proofs import *
 from coconut.utils import *
 from coconut.scheme import *
 
@@ -22,7 +21,7 @@ from coconut.scheme import *
 from chainspacecontract import ChainspaceContract
 
 ## contract name
-contract = ChainspaceContract('petition')
+contract = ChainspaceContract('repsys')
 
 
 ####################################################################
@@ -38,9 +37,9 @@ def init():
     }
 
 # ------------------------------------------------------------------
-# create petition
+# create vote
 # ------------------------------------------------------------------
-@contract.method('create_petition')
+@contract.method('create_vote')
 def create_petition(inputs, reference_inputs, parameters, UUID, options, priv_owner, pub_owner,
     t_owners, n_owners, aggr_vk):
     # inital score
@@ -49,16 +48,16 @@ def create_petition(inputs, reference_inputs, parameters, UUID, options, priv_ow
     zero = (G.infinite(), G.infinite())
     scores = [pack(zero), pack(zero)]
 
-    # new petition object
+    # new vote object
     new_petition = {
         'type' : 'PObject',
         'UUID' : pack(UUID), # unique ID of the petition
         't_owners' : t_owners,
         'n_owners' : n_owners,
-        'owner' : pack(pub_owner), # entity creating the petition
-        'verifier' : pack(aggr_vk), # entity delivering credentials to participate to the petition
-        'options' : options, # the options
-        'scores' : scores, # the signatures per option
+        'owner' : pack(pub_owner), # entity voting
+        'verifier' : pack(aggr_vk), # authorities that gave credentials to the user
+        'options' : options, # options between zero star (0) or five stars (1)
+        'scores' : scores, # the signatures per vote 
         'dec' : []  # holds decryption shares
     }
 
