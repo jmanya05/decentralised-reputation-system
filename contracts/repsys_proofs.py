@@ -6,8 +6,8 @@ from coconut.proofs import *
 from chainspacecontract.examples.utils import *
 
 
-def make_proof_credentials_petition(params, aggr_vk, sigma, private_m, UUID):
-    """ build material & proof for coconut petition showing """
+def make_proof_credentials_reputation(params, aggr_vk, sigma, private_m, UUID):
+    """ build material & proof for coconut reputation voting showing """
     assert len(private_m) > 0
     (G, o, g1, hs, g2, e) = params
     (g2, alpha, beta) = aggr_vk
@@ -41,7 +41,7 @@ def make_proof_credentials_petition(params, aggr_vk, sigma, private_m, UUID):
     ## output
     return (kappa, nu, sigma_prime, zeta, pi_petition)
 
-def verify_proof_credentials_petition(params, aggr_vk, sigma, kappa, nu, zeta, pi_petition, UUID, public_m=[]):
+def verify_proof_credentials_reputation(params, aggr_vk, sigma, kappa, nu, zeta, pi_petition, UUID, public_m=[]):
 	""" verify petition signature """
 	(G, o, g1, hs, g2, e) = params
 	(g2, alpha, beta) = aggr_vk
@@ -67,7 +67,7 @@ def verify_proof_credentials_petition(params, aggr_vk, sigma, kappa, nu, zeta, p
 	return not h.isinf() and e(h, kappa+aggr) == e(s+nu, g2)
 
 
-def make_proof_vote_petition(params, pub, m):
+def make_proof_vote_reputation(params, pub, m):
 	""" create encryption & proof of vote """
 	(G, g, hs, o) = params
 
@@ -106,7 +106,7 @@ def make_proof_vote_petition(params, pub, m):
 	## output
 	return (enc_v, enc_v_not, cv, pi_vote)
 
-def verify_proof_vote_petition(params, enc_v, pub, cv, pi_vote):
+def verify_proof_vote_reputation(params, enc_v, pub, cv, pi_vote):
 	""" verify vote correctness """
 	(G, g, hs, o) = params
 	(a, b) = enc_v
@@ -119,7 +119,7 @@ def verify_proof_vote_petition(params, enc_v, pub, cv, pi_vote):
 	# verify challenge
 	return c == to_challenge([g, hs[0], a, b, cv, Aw, Bw, Cw, Dw])
 
-
+"""
 def make_proof_tally_petition(params, li, enc_results, priv):
 	""" make proof of correct tally """
 	(G, g, hs, o) = params
@@ -141,3 +141,4 @@ def verify_proof_tally_petition(params, li, enc_results, pi_dec, eta):
 	Aw = [-rx*li*enc_results[i][0] + c*eta[i] for i in range(len(enc_results))]
 	# verify challenge
 	return c == to_challenge([g, hs[0]]+Aw)
+"""
