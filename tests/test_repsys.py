@@ -1,4 +1,4 @@
-""" test authenticated bank transfer """
+""" test reputation voting  """
 
 ####################################################################
 # imports
@@ -108,8 +108,6 @@ class Test(unittest.TestCase):
             # initialise petition
             create_petition_transaction = petition.create_petition(
                 (token,),
-                None,
-                None,
                 UUID,
                 options,
                 sk_owners[0],
