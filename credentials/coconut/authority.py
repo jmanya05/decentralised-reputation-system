@@ -1,5 +1,5 @@
 ##########################################
-# Each server for signing
+# Each authority server for signing
 #
 # version: 0.0.1
 ##########################################
