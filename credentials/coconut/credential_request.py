@@ -4,14 +4,9 @@
 # version: 1.0.2
 ##########################################
 # coconut
-from lib import setup
-from lib import elgamal_keygen
-from lib import keygen, sign, aggregate_sign, aggregate_keys, randomize, verify
-from lib import prepare_blind_sign, blind_sign, elgamal_dec, show_blind_sign, blind_verify
-from lib import ttp_th_keygen, aggregate_th_sign
-from aux_functions import readkey, pack, unpack
+from coconut.scheme import *
 # petlib import-export
-#from utils import pack, unpack
+from aux_functions import pack, unpack, savekey, readkey
 # standard REST lib
 import json
 from json  import loads, dumps
@@ -27,7 +22,13 @@ import time
 
 #Routes to servers
 ROUTE_SERVER_INFO = "/"
-ROUTE_SIGN_PRIVATE = "/sign/private"
+ROUTE_SIGN_PRIVATE = "/sign/cred"
+ROUTE_KEY_SET = "/key/set"
+
+#Files to be saved during credential issuance
+VVK = "vvk.txt"
+CREDENTIAL = 'credential.txt'
+PRIVATE_SIGN_DB = 'private_sign.json'
 
 # Servers running in internet
 SERVER_ADDR = [
@@ -40,22 +41,41 @@ SERVER_ADDR = [
 SERVER_PORT = [80] * len(SERVER_ADDR)
 
 # parameters
-ATTRIBUTE = 10
+private_m = [20] * 2 # private attributes
+public_m = [40] * 1 # public attributes
 N = len(SERVER_ADDR)
+t  = 3
+q = 7
 
 # crypto
-params = setup()
+params = setup(q)
+(d, gamma) = elgamal_keygen(params)
+
+(sk, vk) = ttp_keygen(params, t, N)
+#print(sk)
+vk1 = list(vk[:3]) + [None] + list(vk[4:5])
+aggr_vk = agg_key(params, vk1)
+savekey(VVK, pack(aggr_vk))
 
 # timings
 mem = []
 tic = 0
 
-PUBLIC_SIGN_DB = 'public_sign.json'
-PRIVATE_SIGN_DB = 'private_sign.json'
+##########################################
+# set keys
+##########################################
+def set_key():
+    for i in range(N):
+        r = requests.post(
+            "http://"+SERVER_ADDR[i]+":"+str(SERVER_PORT[i])+ROUTE_KEY_SET,
+            data = dumps({"sk": pack(sk[i]),"vk": pack(vk[i])})
+        )
+        assert loads(r.text)["status"] == "OK"
+        #print(loads(r.text)["message"])
 
-##########################################
-# utils
-##########################################
+###############################################
+# utils for client to authorities communication
+###############################################
 # test server connection
 def test_connection():
     for i in range(N):
@@ -83,6 +103,7 @@ def async_request(route, json):
     #print(responses)
     for r in responses:
         #print(r.elapsed and r.elapsed.total_seconds() or "failed")
+        #print(r.text)
         assert loads(r.text)["status"] == "OK"
         record(r.elapsed.total_seconds(), loads(r.text))
 
@@ -90,18 +111,17 @@ def async_request(route, json):
 # response handler
 def response_handler(response, *args, **kwargs):
     toc = get_time()
-    #record(toc-tic, loads(response.text))
 
 # store data in mem
 def record(time, data):
     mem.append({'time':time, 'request':data})
 
-# stave mem to file
+# store mem to file
 def save(filename):
         with open(filename, 'w') as file:
                 file.write('[')
                 for i in range(len(mem)):
-                        mem[i]['time'] = mem[i]['time'] * 1000 # change to ms
+                        mem[i]['time'] = mem[i]['time'] * 1000
                         file.write(dumps(mem[i]))
                         if i != len(mem)-1: file.write(',')
                 file.write(']')
@@ -110,15 +130,13 @@ def save(filename):
 # request blind signature
 ##########################################
 def request_blind_sign():
-    global priv
-    global pub
-    (priv, pub) = elgamal_keygen(params)
-    (cm, c, proof_s) = prepare_blind_sign(params, ATTRIBUTE, pub)
+    (cm, c, proof_s) = prepare_blind_sign(params, gamma, private_m, public_m=public_m)
     json = {
         "cm": pack(cm),
         "c": pack(c),
         "proof_s": pack(proof_s),
-        "pub": pack(pub)
+        "gamma": pack(gamma),
+        "public_m": pack(public_m)
     }
     async_request(ROUTE_SIGN_PRIVATE, json)
 
@@ -134,45 +152,49 @@ def get_sign_final():
     # unblind sig1 from server1
      blind_sig1 = unpack(blind_sign[0]["request"]["load"])
      (h, enc_sig1) = blind_sig1
-     sig1 = (h, elgamal_dec(params, priv, enc_sig1))
+     sig1 = (h, elgamal_dec(params, d, enc_sig1))
 
     # unblind sig2 from server2
      blind_sig2 = unpack(blind_sign[1]["request"]["load"])
      (h, enc_sig2) = blind_sig2
-     sig2 = (h, elgamal_dec(params, priv, enc_sig2))
+     sig2 = (h, elgamal_dec(params, d, enc_sig2))
 
     # unblind sig3 from server3
      blind_sig3 = unpack(blind_sign[2]["request"]["load"])
      (h, enc_sig3) = blind_sig3
-     sig3 = (h, elgamal_dec(params, priv, enc_sig3))
+     sig3 = (h, elgamal_dec(params, d, enc_sig3))
 
     # unblind sig4 from server4
      blind_sig4 = unpack(blind_sign[3]["request"]["load"])
      (h, enc_sig4) = blind_sig4
-     sig4 = (h, elgamal_dec(params, priv, enc_sig4))
+     sig4 = (h, elgamal_dec(params, d, enc_sig4))
 
     # unblind sig5 from server5
      blind_sig5 = unpack(blind_sign[4]["request"]["load"])
      (h, enc_sig5) = blind_sig5
-     sig5 = (h, elgamal_dec(params, priv, enc_sig5))
+     sig5 = (h, elgamal_dec(params, d, enc_sig5))
 
     #aggregate signs
-     sig_agg = aggregate_th_sign(params, [sig1, sig2, sig3, sig4, sig5])
-
-    #signature randomization
-     sig = randomize(params, sig_agg)
-     return sig
+     sigs = [sig1, sig2, sig3, sig4, sig5]
+     sigs_list = [None] + sigs[1:3] + [None] + [sigs[4]]
+     sigma = agg_cred(params, sigs_list)
+     #aggr_vk = unpack(readkey('vvk.txt'))
+     #Theta = prove_cred(params, aggr_vk, sigma, private_m)
+     #assert verify_cred(params, aggr_vk, Theta, public_m = public_m)
+     savekey(CREDENTIAL, pack(sigma))
+     return sigma
 
 ##########################################
 # Signature showing and verification
 ##########################################
 def show_and_verify():
-     vvk = readkey('vvk.txt')
-     params1 = setup()
-     sig = get_sign_final()
-     (kappa, proof_v) = show_blind_sign(params1, unpack(vvk), ATTRIBUTE)
 
-     assert blind_verify(params1, unpack(vvk), kappa, sig, proof_v)
+    aggr_vk = unpack(readkey('vvk.txt'))
+    params_ver = setup(q)
+    sigma = get_sign_final()
+    Theta = prove_cred(params_ver, aggr_vk, sigma, private_m)
+
+    assert verify_cred(params_ver, aggr_vk, Theta, public_m = public_m)
 
 ##########################################
 # main function
@@ -181,8 +203,17 @@ def main():
     # test server connection
     test_connection()
     print('[OK] Test connection.')
+
+    # Key distribution
+    set_key()
+    print('[OK] Key distribution.')
+    time.sleep(5)
+
     # request blind sign to authorities
-    print('[OK] Requesting blind sign of credentials')
+    print('[OK] Requesting blind sign of private and public attributes...')
+    time.sleep(5)
+    # attribute private key to each authority
+
     del mem[:]
     request_blind_sign()
     time.sleep(5)
@@ -190,16 +221,18 @@ def main():
     print('[OK] Done.')
 
     # Build credential
-    time.sleep(5)
+    #time.sleep(5)
     print('[OK] Building credential...')
     get_sign_final()
+    time.sleep(3)
     print('[OK] Done.')
 
     # Show and verify credential
-    time.sleep(5)
+    #time.sleep(5)
     print('[OK] Verifying credential...')
+    time.sleep(5)
     show_and_verify()
-    print('[OK] Done.')
+    print('[OK] Credential verified!')
 
 ##########################################
 # program entry point

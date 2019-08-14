@@ -1,28 +1,23 @@
 ##########################################
-# Each authority server for signing
+# Each server for for key receiving and
+# credential signing.
 #
-# version: 0.0.1
+# version: 2.0.0
 ##########################################
+import sys
 # flask
 from json  import loads, dumps
 from flask import Flask, request
 # url parser
 from urllib.parse import urlparse
-
-import pickle
+#json
 import json
 # coconut
 from bplib.bp import BpGroup, G2Elem
-from lib import setup
-from lib import elgamal_keygen
-from lib import keygen, sign, aggregate_sign, aggregate_keys, randomize, verify
-from lib import prepare_blind_sign, blind_sign, elgamal_dec, show_blind_sign, blind_verify
-from lib import ttp_th_keygen, aggregate_th_sign
+from coconut.scheme import *
 # petlib import-export
-# from utils import pack, unpack
 # standard REST lib
 from json  import loads, dumps, dump
-import requests
 # async REST lib
 import asyncio
 import concurrent.futures
@@ -30,16 +25,17 @@ import requests
 #import grequests
 # timing & db
 import time
-#from tinydb import TinyDB, Query
+#auxiliary functions
 from aux_functions import pack, unpack, savekey, readkey
+
 ##########################################
 # static fields
-server_id = 'Authority3'
+server_id = 'Authority1'
 SECRET_KEY = 'secret_key.txt'
 PUBLIC_KEY = 'public_key.txt'
-
+q = 7
 # crypto
-params = setup()
+params = setup(q)
 
 # make packet for client
 def format(load):
@@ -50,22 +46,18 @@ def format(load):
         })
 
 ##########################################
+# server function
 ##########################################
-# server functions
-##########################################
-def sign_wrapper(data):
-        m = data["message"]
-        app.sk = unpack(readkey(SECRET_KEY))
-        sig = sign(params, app.sk, m)
-        return format(pack(sig))
 
-def blind_sign_wrapper(data):
+def blind_sign_service(data):
     cm = unpack(data["cm"])
     c = unpack(data["c"])
     proof_s = unpack(data["proof_s"])
-    pub = unpack(data["pub"])
+    Lambda = (cm, c, proof_s)
+    gamma = unpack(data["gamma"])
+    public_m = unpack(data["public_m"])
     app.sk = unpack(readkey(SECRET_KEY))
-    blind_sig = blind_sign(params, app.sk, cm, c, pub, proof_s)
+    blind_sig = blind_sign(params, app.sk, gamma, Lambda, public_m = public_m)
     return format(pack(blind_sig))
 
 ##########################################
@@ -104,31 +96,16 @@ def key_set():
         else:
                 return dumps({"status": "ERROR", "message":"Use POST method."})
 
-# ----------------------------------------
-# /sign/public
-# request a signature on a public attribute
-# ----------------------------------------
-@app.route("/sign/public", methods=["GET", "POST"])
-def sign_public():
-        if request.method == "POST":
-                try:
-                        return sign_wrapper(loads(request.data.decode("utf-8")))
-                except KeyError as e:
-                        return dumps({"status": "ERROR", "message": e.args})
-                except Exception as e:
-                        return dumps({"status": "ERROR", "message": e.args})
-        else:
-                return dumps({"status": "ERROR", "message":"Use POST method."})
+# ----------------------------------------------------
+# /sign/cred
+# request a signature on private and public attributes
+# ----------------------------------------------------
 
-# ----------------------------------------
-# /sign/private
-# request a signature on a private attribute
-# ----------------------------------------
-@app.route("/sign/private", methods=["GET", "POST"])
+@app.route("/sign/cred", methods=["GET", "POST"])
 def sign_private():
         if request.method == "POST":
                 try:
-                        return blind_sign_wrapper(loads(request.data.decode("utf-8")))
+                        return blind_sign_service(loads(request.data.decode("utf-8")))
                 except KeyError as e:
                         return dumps({"status": "ERROR", "message": e.args})
                 except Exception as e:
@@ -141,7 +118,7 @@ def sign_private():
 # program entry point
 ##########################################
 if __name__ == "__main__":
-        #port = int(sys.argv[1])
+ #       port = int(sys.argv[1])
         #server_id = port
         app.run(host="0.0.0.0", port=80, debug=True)
 ##########################################
