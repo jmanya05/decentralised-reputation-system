@@ -5,11 +5,11 @@
 ##########################################
 # coconut
 from coconut.scheme import *
-# petlib import-export
+# aux functions
 from aux_functions import pack, unpack, savekey, readkey
 # standard REST lib
 import json
-from json  import loads, dumps
+from json import loads, dumps
 import requests
 # async REST lib
 import asyncio
@@ -42,31 +42,22 @@ SERVER_ADDR = [
 
 SERVER_PORT = [80] * len(SERVER_ADDR)
 q = 7
-# crypto
 
+# crypto
 params = setup()
 (d, gamma) = elgamal_keygen(params)
 savekey(PARAMETER_D, pack(d))
 savekey(GAMMA, pack(gamma))
-print ('£££££££££££££££ esto es gamma ££££££££££££££', pack(gamma))
 # parameters
 private_m = [d] # private attributes
-print ('*********** esto es D **************', d)
 public_m = [40]  # public attributes
 N = len(SERVER_ADDR)
 t  = 3
-#q = 7
-"""
-# crypto
-params = setup(q)
-(d, gamma) = elgamal_keygen(params)
-"""
 (sk, vk) = ttp_keygen(params, t, N)
 #print(sk)
 vk1 = list(vk[:3]) + [None] + list(vk[4:5])
 aggr_vk = agg_key(params, vk1)
 savekey(VVK, pack(aggr_vk))
-print ('esto es VVK %%%%%%%%%%%%%', pack(aggr_vk))
 
 # timings
 mem = []
