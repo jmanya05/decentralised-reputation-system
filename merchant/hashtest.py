@@ -8,7 +8,7 @@ from petlib.ecdsa import do_ecdsa_sign, do_ecdsa_verify
 from aux_functions import savekey, readkey, pack, unpack 
 #files
 HASH_BILL = 'hash_bill.txt'
-SIGNATURE = 'signature3.txt'
+SIGNATURE = 'signature.txt'
 
 #code
 G = EcGroup()
@@ -16,7 +16,6 @@ sig_key = unpack(readkey('sig_key.txt'))
 print(sig_key)
 
 ver_key = unpack(readkey('ver_key.txt'))
-print('esto es ver key',ver_key)
 time.sleep(3)
 
 bill_number = str(random.randint(1, 10000))
@@ -31,5 +30,5 @@ print unpack(readkey('hash_bill.txt'))
 signature_bill = do_ecdsa_sign(G, sig_key, bill_hashed)
 savekey(SIGNATURE, pack(signature_bill))
 time.sleep(3)
-sig = unpack(readkey('signature3.txt'))
+sig = unpack(readkey('signature.txt'))
 assert do_ecdsa_verify(G, ver_key, sig, bill_hashed)
