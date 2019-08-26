@@ -34,10 +34,10 @@ PARAMETER_D = 'd.txt'
 
 # Servers running in internet
 SERVER_ADDR = [
-"ec2-18-211-2-124.compute-1.amazonaws.com",
-"ec2-3-218-186-101.compute-1.amazonaws.com",
-"ec2-3-221-244-24.compute-1.amazonaws.com",
-"ec2-3-224-131-122.compute-1.amazonaws.com",
+"ec2-3-105-248-184.ap-southeast-2.compute.amazonaws.com",
+"ec2-3-114-228-37.ap-northeast-1.compute.amazonaws.com",
+"ec2-13-48-122-115.eu-north-1.compute.amazonaws.com",
+"ec2-3-120-100-70.eu-central-1.compute.amazonaws.com",
 "ec2-3-224-174-146.compute-1.amazonaws.com"]
 
 SERVER_PORT = [80] * len(SERVER_ADDR)
