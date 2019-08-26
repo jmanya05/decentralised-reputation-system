@@ -1,6 +1,6 @@
 # flask server
 from json import loads, dumps
-from flask import Flask, request
+from flask import Flask, request, send_file, render_template
 # url parser
 from urllib.parse import urlparse
 #utilities
@@ -23,7 +23,6 @@ import getpass
 # webapp
 app = Flask(__name__)
 app.sk = None
-
 
 def render_products():
     return '''
@@ -115,7 +114,7 @@ def data():
      # Sign and verify signature
     sig = do_ecdsa_sign(G, sig_key, bill_hashed)
     assert do_ecdsa_verify(G, ver_key, sig, bill_hashed)
-    return(option, bill_number, bill_hashed, sig)
+    return(option, bill_number, ver_key, bill_hashed, sig)
 
 
 @app.route("/info-purchasing", methods=["GET", "POST"])
@@ -123,9 +122,19 @@ def index():
     if request.method == 'POST':
         #option = request.form.get('foption')
         #print ("OPTION:",option)
-        (option, bill_number, bill_hashed, sig) = data()
-        if option == '1': 
-            return '''<form action="/customer-rate" method="POST">
+        (option, bill_number, ver_key, bill_hashed, sig) = data()
+        pack_bill_hashed = pack(bill_hashed)
+        pack_sig = pack(sig)
+        pack_verkey = pack(ver_key)
+
+        filedata = open("data_contract.txt","w")
+        filedata.write(pack_sig)
+        filedata.write("\n")
+        filedata.write(pack_bill_hashed)
+        filedata.close()
+
+        if option == '1':
+            return '''<form action="/data_contract" method="POST">
                    <h2>Thank you for your purchase</h2>
                    <p>Here you have the information of your purchasing:</p>
                    Your item selected: 1001<br>
@@ -138,12 +147,13 @@ def index():
                    <p> Your opinion is important, on scale of 0 or 1, <p>
                    <p> How would you rate your overall satisfaction with the item you bought? </p>
                    <p> 0 - Dissatisfied / 1 - Satisfied <p>
+                   <p> After hitting SUBMIT, you will receive some data that will allow you to vote. Please, save such information in a .txt file. </p>
                    Rate: <input type="text" name="frate"><br>
                    <button type="submit">Submit</button><br>
                    </form>'''.format(bill_number, pack(bill_hashed), pack(sig))
 
         if option == '2':
-            return '''<form action="/customer-rate" method="POST">
+            return '''<form action="/data_contract" method="POST">
                     <h2>Thank you for your purchase</h2>
                     <p>Here you have the information of your purchasing:</p>
                     Your item selected: 1002<br>
@@ -156,12 +166,13 @@ def index():
                     <p> Your opinion is important, on scale of 0 or 1, <p>
                     <p> How would you rate your overall satisfaction with the item you bought? </p>
                     <p> 0 - Dissatisfied / 1 - Satisfied <p>
+                    <p> After hitting SUBMIT, you will receive some data that will allow you to vote. Please, save such information in a .txt file. </p>
                     Rate: <input type="text" name="frate"><br>
                     <button type="submit">Submit</button><br>
                     </form>'''.format(bill_number, pack(bill_hashed), pack(sig))
-                    
+
         if option == '3':
-            return '''<form action="/customer-rate" method="POST">
+            return '''<form action="/data_contract" method="POST">
                     <h2>Thank you for your purchase</h2>
                     <p>Here you have the information of your purchasing:</p>
                     Your item selected: 1003<br>
@@ -174,12 +185,13 @@ def index():
                     <p> Your opinion is important, on scale of 0 or 1, <p>
                     <p> How would you rate your overall satisfaction with the item you bought? </p>
                     <p> 0 - Dissatisfied / 1 - Satisfied <p>
+                    <p> After hitting SUBMIT, you will receive some data that will allow you to vote. Please, save such information in a .txt file. </p>
                     Rate: <input type="text" name="frate"><br>
                     <button type="submit">Submit</button><br>
                     </form>'''.format(bill_number, pack(bill_hashed), pack(sig))
 
         if option == '4':
-            return '''<form action="/customer-rate" method="POST">
+            return '''<form action="/data_contract" method="POST">
                     <h2>Thank you for your purchase</h2>
                     <p>Here you have the information of your purchasing:</p>
                     Your item selected: 1004<br>
@@ -192,12 +204,13 @@ def index():
                     <p> Your opinion is important, on scale of 0 or 1, <p>
                     <p> How would you rate your overall satisfaction with the item you bought? </p>
                     <p> 0 - Dissatisfied / 1 - Satisfied <p>
+                    <p> After hitting SUBMIT, you will receive some data that will allow you to vote. Please, save such information in a .txt file. </p>
                     Rate: <input type="text" name="frate"><br>
                     <button type="submit">Submit</button><br>
                     </form>'''.format(bill_number, pack(bill_hashed), pack(sig))
-                    
+
         if option == '5':
-            return '''<form action="/customer-rate" method="POST">
+            return '''<form action="/data_contract" method="POST">
                     <h2>Thank you for your purchase</h2>
                     <p>Here you have the information of your purchasing:</p>
                     Your item selected: 1005<br>
@@ -210,12 +223,13 @@ def index():
                     <p> Your opinion is important, on scale of 0 or 1, <p>
                     <p> How would you rate your overall satisfaction with the item you bought? </p>
                     <p> 0 - Dissatisfied / 1 - Satisfied <p>
+                    <p> After hitting SUBMIT, you will receive some data that will allow you to vote. Please, save such information in a .txt file. </p>
                     Rate: <input type="text" name="frate"><br>
                     <button type="submit">Submit</button><br>
                     </form>'''.format(bill_number, pack(bill_hashed), pack(sig))
 
         if option == '6':
-            return '''<form action="/customer-rate" method="POST">
+            return '''<form action="/data_contract" method="POST">
                     <h2>Thank you for your purchase</h2>
                     <p>Here you have the information of your purchasing:</p>
                     Your item selected: 1006<br>
@@ -228,27 +242,32 @@ def index():
                     <p> Your opinion is important, on scale of 0 or 1, <p>
                     <p> How would you rate your overall satisfaction with the item you bought? </p>
                     <p> 0 - Dissatisfied / 1 - Satisfied <p>
+                    <p> After hitting SUBMIT, you will receive some data that will allow you to vote. Please, save such information in a .txt file. </p>
                     Rate: <input type="text" name="frate"><br>
                     <button type="submit">Submit</button><br>
                     </form>'''.format(bill_number, pack(bill_hashed), pack(sig))
 
     return '<h1>Your option is invalid</h1>'
 
-@app.route("/customer-rate", methods=["GET", "POST"])
-def customer_rate():
+@app.route('/data_contract', methods = ["GET","POST"])
+def return_file():
     if request.method == 'POST':
        rate = request.form.get('frate')
-       print('rate1',rate)
+
+       filedata = open("data_contract.txt","a")
+       filedata.write("\n")
+       filedata.write(rate)
+       filedata.close()
        if (rate == '0' or rate == '1'):
-           print('rate del if',rate)
-           return '''<form action="/customer-rate" method="POST">
-               <h2>Thank you! </h2>
-               </form>'''
+           return send_file('/home/ubuntu/coconut/data_contract.txt', attachment_filename = 'data_contract.txt')
 
     return '<h1>The rate must be 0 or 1</h1>'
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
+    unverkey = unpack(readkey('ver_key.txt'))
+    print (unverkey)
+
     if request.method == 'POST':
         user = request.form.get('user')
         pswd = request.form['pswd']
@@ -259,23 +278,24 @@ def login():
         user2 = "alberto.sonnino@ucl.ac.uk"
         pswd2 = "abcd"
 
+
         if (user == user1 and pswd == pswd1) or ((user == user2 and pswd == pswd2)):
             return render_products()
 
-        return '<h1>User or password invalid</h1>'
+        return '<h1>User or password invalid...</h1>'
 
     return '''<form method="POST">
                   <h2>Welcome to Adventurous Life Store</h2>
+                  Server's public key: {} <br>
                   <p>Please insert your credentials:</p>
                   Email: <input type="text" name="user"><br>
                   Password: <input type="password" name="pswd" maxlength="8"><br>
                   <input type="reset" value="Reset">
                   <input type="submit">
-              </form>'''
+              </form>'''.format(pack(unverkey))
 
 
 if __name__ == "__main__":
-    port = int(sys.argv[1])
-    server_id = port
+    #port = int(sys.argv[1])
+    #server_id = port
     app.run(host="0.0.0.0", port=80)
-
