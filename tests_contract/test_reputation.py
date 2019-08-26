@@ -1,4 +1,4 @@
-""" test for a voting system"""
+""" test for putting a mark in a reputation system"""
 
 ####################################################################
 # imports
@@ -129,11 +129,17 @@ class Test(unittest.TestCase):
             old_list = create_reputation_transaction['transaction']['outputs'][2]
 
             # reading the material for the credential and bill verification
-            # -----------------------------------
-            item_sign = unpack(readkey('signature2.txt'))
-            bill_number = unpack(readkey('bill_number.txt'))
-            # add signature to the reputation voting
 
+            with open("data_contract.txt", "r") as f:
+                data_purchase = f.read().splitlines()
+                item__sign = data_purchase[0]
+                item_sign = unpack(item__sign)
+                bill__number = data_purchase[1]
+                bill_number = unpack(bill__number)
+                mark = data_purchase[2]
+                mark = int(mark)
+
+            # add signature to the reputation voting
             transaction = reputation.sign(
                 (old_reputation, old_list),
                 None,
@@ -144,7 +150,7 @@ class Test(unittest.TestCase):
                 item_sign,
                 merchant_vk,
                 bill_number,
-                0
+                mark
             )
 
             ## submit transaction
@@ -186,9 +192,17 @@ class Test(unittest.TestCase):
             for i in range(3):
                 # reading material to credential and bill verification
                 # ------------------------------------
-                item_sign = unpack(readkey('signature2.txt'))
-                #bill_number = sha1(b"Hello Worldsss!").digest()
-                bill_number = unpack(readkey('bill_number.txt'))
+                # reading the material for the credential and bill verification
+
+                with open("data_contract.txt", "r") as f:
+                    data_purchase = f.read().splitlines()
+                    item__sign = data_purchase[0]
+                    item_sign = unpack(item__sign)
+                    bill__number = data_purchase[1]
+                    bill_number = unpack(bill__number)
+                    mark = data_purchase[2]
+                    mark = int(mark)
+
                 sign_transaction = reputation.sign(
                     (old_reputation, old_list),
                     None,
@@ -199,7 +213,7 @@ class Test(unittest.TestCase):
                     item_sign,
                     merchant_vk,
                     bill_number,
-                    0 # vote
+                    mark # vote
                 )
                 old_reputation = sign_transaction['transaction']['outputs'][0]
                 old_list = sign_transaction['transaction']['outputs'][1]
@@ -258,9 +272,18 @@ class Test(unittest.TestCase):
                 (d, gamma) = elgamal_keygen(bp_params)
                 private_m = [d]
                 # ------------------------------------
-                item_sign = unpack(readkey('signature.txt'))
-                #bill_number = sha1(b"Hello Worldsss!").digest()
-                bill_number = unpack(readkey('bill_number.txt'))
+
+                # reading the material for the credential and bill verification
+
+                with open("data_contract.txt", "r") as f:
+                    data_purchase = f.read().splitlines()
+                    item__sign = data_purchase[0]
+                    item_sign = unpack(item__sign)
+                    bill__number = data_purchase[1]
+                    bill_number = unpack(bill__number)
+                    mark = data_purchase[2]
+                    mark = int(mark)
+
                 sign_transaction = reputation.sign(
                     (old_reputation, old_list),
                     None,
@@ -271,7 +294,7 @@ class Test(unittest.TestCase):
                     item_sign,
                     merchant_vk,
                     bill_number,
-                    0 # vote
+                    mark # vote
                 )
                 old_reputation = sign_transaction['transaction']['outputs'][0]
                 old_list = sign_transaction['transaction']['outputs'][1]
@@ -303,8 +326,8 @@ class Test(unittest.TestCase):
             )
             self.assertTrue(response.json()['success'])
 
-            print("\n\n==================== OUTCOME ====================\n")
-            print('OUTCOME: ', loads(transaction['transaction']['returns'][0]))
+            print("\n\n==================== RATE ====================\n")
+            print('ITEM ID:  ', loads(transaction['transaction']['returns'][0]))
             print("\n===================================================\n\n")
 
    
