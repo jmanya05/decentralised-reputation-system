@@ -273,10 +273,10 @@ def login():
         pswd = request.form['pswd']
 
         user1 = "jorge.manya.18@ucl.ac.uk"
-        pswd1 = "wx5VMPmI"
+        pswd1 = ""
 
         user2 = "alberto.sonnino@ucl.ac.uk"
-        pswd2 = "fAIeZRPu"
+        pswd2 = "abcd"
 
 
         if (user == user1 and pswd == pswd1) or ((user == user2 and pswd == pswd2)):
